@@ -2,16 +2,17 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#e8ebef" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <title>Ledger</title>
 <style>
 *{box-sizing:border-box}
+:root{--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);}
 body{margin:0;background:#e8ebef;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#151922;-webkit-tap-highlight-color:transparent;}
 button{cursor:pointer;font-family:inherit;}
-.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:82px;background:#e8ebef;}
+.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:calc(82px + var(--safe-bottom));padding-top:var(--safe-top);background:#e8ebef;}
 .head{display:flex;justify-content:space-between;align-items:center;padding:20px 18px 4px;}
 .head h2{margin:0;font-size:22px;}
 .sub{font-size:11px;color:#89909a;}
@@ -32,8 +33,8 @@ button{cursor:pointer;font-family:inherit;}
 .left{display:flex;align-items:center;gap:10px;min-width:0;}
 .avatar{width:36px;height:36px;border-radius:12px;background:#e9edf2;display:grid;place-items:center;flex-shrink:0;font-size:15px;}
 .row b{font-size:12.5px;}
-.row small{display:block;color:#89909a;margin-top:3px;font-size:10px;}
-.nav{height:64px;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:#fff;border-top:1px solid #e7e9ed;display:flex;justify-content:space-around;align-items:center;font-size:9px;color:#858b95;z-index:30;}
+.row small{display:block;color:#89909a;margin-top:3px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.nav{height:calc(64px + var(--safe-bottom));padding-bottom:var(--safe-bottom);position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:#fff;border-top:1px solid #e7e9ed;display:flex;justify-content:space-around;align-items:center;font-size:9px;color:#858b95;z-index:30;}
 .nav button{background:none;border:none;color:inherit;font-size:9px;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;}
 .nav button span.ic{font-size:18px;line-height:1;}
 .nav .active{color:#334cff;font-weight:800;}
@@ -46,8 +47,12 @@ button{cursor:pointer;font-family:inherit;}
 .stat{background:#f4f5f7;border-radius:16px;padding:13px;}
 .stat small{font-size:9px;color:#858b95;}
 .stat b{display:block;margin-top:6px;font-size:15px;}
-.chart{height:100px;display:flex;align-items:flex-end;gap:7px;padding:10px 3px;}
-.bar{flex:1;background:#4e65ef;border-radius:6px 6px 2px 2px;min-height:4px;}
+.chart{display:flex;align-items:flex-end;gap:7px;padding:10px 3px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0;}
+.bar-wrap{height:90px;width:100%;display:flex;align-items:flex-end;}
+.bar{width:100%;background:#4e65ef;border-radius:6px 6px 2px 2px;min-height:4px;}
+.bar-label{font-size:9px;color:#89909a;}
+.bar-col.today .bar-label{color:#334cff;font-weight:800;}
 .donut{width:140px;height:140px;border-radius:50%;margin:8px auto;display:grid;place-items:center;position:relative;}
 .donut span{width:100px;height:100px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;text-align:center;padding:4px;}
 .field{background:#f1f3f6;border-radius:13px;padding:14px;margin:8px 18px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:8px;}
@@ -72,7 +77,7 @@ button{cursor:pointer;font-family:inherit;}
 .backdrop{position:fixed;inset:0;background:rgba(15,17,23,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center;}
 .sheet{background:#fff;width:100%;max-width:480px;border-radius:16px 16px 0 0;padding:10px 0 20px;max-height:85vh;overflow:auto;}
 .sheet .grabber{width:36px;height:4px;background:#e3e6eb;border-radius:2px;margin:6px auto 10px;}
-.fullsheet{background:#e8ebef;width:100%;max-width:480px;min-height:100vh;padding:0 0 24px;}
+.fullsheet{background:#e8ebef;width:100%;max-width:480px;min-height:100vh;padding:var(--safe-top) 0 24px;}
 .close-x{background:#fff;border:1px solid #e3e6eb;width:34px;height:34px;border-radius:10px;font-size:16px;display:grid;place-items:center;}
 .err{color:#f25e68;font-size:12px;margin:4px 18px;}
 select{-webkit-appearance:none;appearance:none;}
@@ -153,6 +158,7 @@ function balanceOf(accountId) {
   return base;
 }
 function accName(id) { var a = data.accounts.filter(function (x) { return x.id === id; })[0]; return a ? a.name : ""; }
+function compareTxDesc(a, b) { var byDate = new Date(b.date) - new Date(a.date); if (byDate) return byDate; return (b.createdAt || 0) - (a.createdAt || 0); }
 
 // ---------------- render root ----------------
 function render() {
@@ -168,7 +174,23 @@ var _lastFocusId = null, _lastFocusPos = null;
 function restoreFocus() {
   if (!_lastFocusId) return;
   var elx = document.getElementById(_lastFocusId);
-  if (elx) { elx.focus(); if (_lastFocusPos != null && elx.setSelectionRange) { try { elx.setSelectionRange(_lastFocusPos, _lastFocusPos); } catch (e) {} } }
+  if (!elx) return;
+  var pos = _lastFocusPos;
+  elx.focus({ preventScroll: true });
+  if (pos != null && elx.setSelectionRange) { try { elx.setSelectionRange(pos, pos); } catch (e) {} }
+  if (document.activeElement !== elx) {
+    setTimeout(function () {
+      var el2 = document.getElementById(_lastFocusId);
+      if (!el2) return;
+      el2.readOnly = true;
+      el2.focus({ preventScroll: true });
+      setTimeout(function () {
+        el2.readOnly = false;
+        el2.focus({ preventScroll: true });
+        if (pos != null && el2.setSelectionRange) { try { el2.setSelectionRange(pos, pos); } catch (e) {} }
+      }, 50);
+    }, 50);
+  }
 }
 document.addEventListener("focusin", function (e) {
   if (e.target && e.target.id) { _lastFocusId = e.target.id; _lastFocusPos = e.target.selectionStart; }
@@ -268,12 +290,20 @@ function renderHome() {
   });
   var weekTotal = sums.reduce(function (s, v) { return s + v; }, 0);
   var maxDay = Math.max.apply(null, sums.concat([1]));
+  var todayKey = new Date().toISOString().slice(0, 10);
   html += '<div class="section">Spending this week<span class="sub">' + fmt(weekTotal) + '</span></div>';
   html += '<div class="card"><div class="chart">';
-  sums.forEach(function (v) { var h = maxDay ? Math.max(4, Math.round((v / maxDay) * 100)) : 4; html += '<div class="bar" style="height:' + h + '%;opacity:' + (v ? 1 : .3) + ';"></div>'; });
+  days.forEach(function (d, i) {
+    var v = sums[i];
+    var h = maxDay ? Math.max(4, Math.round((v / maxDay) * 100)) : 4;
+    var dayKey = d.toISOString().slice(0, 10);
+    var isToday = dayKey === todayKey;
+    var lbl = d.toLocaleDateString(undefined, { weekday: "short" });
+    html += '<div class="bar-col' + (isToday ? " today" : "") + '"><div class="bar-wrap"><div class="bar" style="height:' + h + '%;opacity:' + (v ? 1 : .3) + ';" title="' + esc(lbl) + ": " + esc(fmt(v)) + '"></div></div><span class="bar-label">' + esc(lbl) + '</span></div>';
+  });
   html += '</div></div>';
 
-  var recent = data.transactions.slice().sort(function (a, b) { return new Date(b.date) - new Date(a.date); }).slice(0, 6);
+  var recent = data.transactions.slice().sort(compareTxDesc).slice(0, 6);
   html += '<div class="section">Recent transactions<button class="btn-ghost" onclick="setTab(\'transactions\')">View all</button></div>';
   html += recent.length ? '<div class="rowlist">' + txRows(recent) + '</div>' : '<div class="empty">Nothing logged yet. Tap + to add your first transaction.</div>';
   return html;
@@ -292,15 +322,16 @@ function txRows(list) {
     var cls = t.type === "income" ? "green" : t.type === "expense" ? "red" : "blue";
     var sub = (t.date || "").slice(0, 10);
     var label = t.type === "transfer" ? (accName(t.accountId) + " \u2192 " + accName(t.toAccountId)) : accName(t.accountId);
+    var noteSuffix = t.note ? (" \u00B7 " + esc(t.note)) : "";
     html += '<div class="row" style="cursor:pointer;" onclick="openAddModal(null,\'' + t.id + '\')">';
-    html += '<div class="left"><div class="avatar">' + txIcon(t) + '</div><div style="min-width:0;"><b>' + esc(t.category || (t.type === "transfer" ? "Transfer" : "")) + '</b><small>' + esc(label) + ' \u00B7 ' + esc(sub) + '</small></div></div>';
+    html += '<div class="left"><div class="avatar">' + txIcon(t) + '</div><div style="min-width:0;"><b>' + esc(t.category || (t.type === "transfer" ? "Transfer" : "")) + '</b><small>' + esc(label) + ' \u00B7 ' + esc(sub) + noteSuffix + '</small></div></div>';
     html += '<b class="' + cls + ' mono" style="font-size:12.5px;">' + sign + fmt(t.amount) + '</b></div>';
   });
   return html;
 }
 
 // ---------------- transactions ----------------
-function setFilter(key, val) { ui.txFilter[key] = val; scheduleRender(150); }
+function setFilter(key, val) { ui.txFilter[key] = val; scheduleRender(400); }
 function renderTransactions() {
   var html = '<div class="head"><div><span class="sub">All activity</span><h2>Transactions</h2></div><button class="icon-btn" onclick="openAddModal()">+</button></div>';
   html += '<input class="search" placeholder="Search transactions" value="' + esc(ui.txFilter.search) + '" oninput="setFilter(\'search\', this.value)" id="tx-search">';
@@ -319,7 +350,7 @@ function renderTransactions() {
       if (hay.toLowerCase().indexOf(s) === -1) return false;
     }
     return true;
-  }).sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+  }).sort(compareTxDesc);
 
   if (!list.length) { html += '<div class="empty">No transactions match.</div>'; return html; }
 
@@ -419,7 +450,7 @@ function renderBudgets() {
   return html;
 }
 function openBudgetModal() { ui.modal = { kind: "budget", draft: { category: getExpenseCats()[0], amount: "", error: "" } }; render(); }
-function setBudgetField(key, val) { ui.modal.draft[key] = val; scheduleRender(150); }
+function setBudgetField(key, val) { ui.modal.draft[key] = val; scheduleRender(400); }
 function submitBudgetModal(e) {
   e.preventDefault();
   var d = ui.modal.draft; var amt = parseFloat(d.amount);
@@ -455,7 +486,7 @@ function openGoalModal(id) {
   ui.modal = { kind: "goal", editingId: editing ? editing.id : null, draft: { name: (editing && editing.name) || "", target: editing ? String(editing.target) : "", saved: editing ? String(editing.saved) : "0", deadline: (editing && editing.deadline) || "", error: "" } };
   render();
 }
-function setGoalField(key, val) { ui.modal.draft[key] = val; scheduleRender(150); }
+function setGoalField(key, val) { ui.modal.draft[key] = val; scheduleRender(400); }
 function submitGoalModal(e) {
   e.preventDefault();
   var d = ui.modal.draft; var target = parseFloat(d.target); var saved = parseFloat(d.saved) || 0;
@@ -486,7 +517,7 @@ function processRecurring() {
   data.recurringTemplates.forEach(function (tpl) {
     var guard = 0;
     while (tpl.nextDueDate <= todayStr && guard < 60) {
-      data.transactions.push({ id: uid(), type: tpl.type, amount: tpl.amount, category: tpl.category, accountId: tpl.accountId, toAccountId: tpl.toAccountId, date: tpl.nextDueDate, note: tpl.note || "Recurring" });
+      data.transactions.push({ id: uid(), type: tpl.type, amount: tpl.amount, category: tpl.category, accountId: tpl.accountId, toAccountId: tpl.toAccountId, date: tpl.nextDueDate, note: tpl.note || "Recurring", createdAt: Date.now() });
       tpl.nextDueDate = advanceDate(tpl.nextDueDate, tpl.frequency); changed = true; guard++;
     }
   });
@@ -527,7 +558,7 @@ function openAccountModal(id) {
   ui.modal = { kind: "account", editingId: editing ? editing.id : null, draft: { name: (editing && editing.name) || "", type: (editing && editing.type) || ACCOUNT_TYPES[0], initialBalance: editing ? String(editing.initialBalance) : "0", error: "" } };
   render();
 }
-function setAccountField(key, val) { ui.modal.draft[key] = val; scheduleRender(150); }
+function setAccountField(key, val) { ui.modal.draft[key] = val; scheduleRender(400); }
 function submitAccountModal(e) {
   e.preventDefault();
   var d = ui.modal.draft; var bal = parseFloat(d.initialBalance) || 0;
@@ -624,7 +655,7 @@ function handleImportedCSV(text) {
     if (type !== "income" && type !== "expense" && type !== "transfer") type = "expense";
     var accId = findOrCreateAccountId(row[idx.account]);
     var toAccId = type === "transfer" && idx.toAccount !== -1 ? findOrCreateAccountId(row[idx.toAccount]) : undefined;
-    imported.push({ id: uid(), type: type, amount: amt, category: type === "transfer" ? "Transfer" : ((row[idx.category] || "Other").trim() || "Other"), accountId: accId, toAccountId: toAccId, date: (row[idx.date] || "").trim(), note: idx.note !== -1 ? (row[idx.note] || "") : "" });
+    imported.push({ id: uid(), type: type, amount: amt, category: type === "transfer" ? "Transfer" : ((row[idx.category] || "Other").trim() || "Other"), accountId: accId, toAccountId: toAccId, date: (row[idx.date] || "").trim(), note: idx.note !== -1 ? (row[idx.note] || "") : "", createdAt: Date.now() + r });
   }
   if (!imported.length) { alert("No valid transactions found in that file."); return; }
   if (!confirm("Import " + imported.length + " transaction(s) from this file?")) return;
@@ -632,6 +663,53 @@ function handleImportedCSV(text) {
   if (replace) data.transactions = imported; else data.transactions = data.transactions.concat(imported);
   saveData(); render();
   alert("Imported " + imported.length + " transaction(s) successfully.");
+}
+async function exportBackup() {
+  var payload = JSON.stringify(data, null, 2);
+  var fileName = "ledger-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+  if (window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform()) {
+    try {
+      var Filesystem = Capacitor.Plugins.Filesystem; var Share = Capacitor.Plugins.Share;
+      await Filesystem.writeFile({ path: fileName, data: payload, directory: "CACHE", encoding: "utf8" });
+      var uriResult = await Filesystem.getUri({ directory: "CACHE", path: fileName });
+      await Share.share({ title: "Export Full Backup", text: "Ledger full backup (JSON)", url: uriResult.uri, dialogTitle: "Share Backup" });
+    } catch (err) { alert("Backup export failed: " + (err && err.message ? err.message : err)); }
+  } else {
+    var blob = new Blob([payload], { type: "application/json;charset=utf-8;" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a"); a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  }
+}
+function importBackup() {
+  var input = document.getElementById("import-backup-input");
+  if (!input) { input = document.createElement("input"); input.type = "file"; input.accept = ".json,application/json"; input.id = "import-backup-input"; input.style.display = "none"; document.body.appendChild(input); }
+  input.value = "";
+  input.onchange = function () {
+    var file = input.files && input.files[0]; if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () { handleImportedBackup(reader.result); };
+    reader.onerror = function () { alert("Could not read the file."); };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+function handleImportedBackup(text) {
+  var parsed;
+  try { parsed = JSON.parse(text); } catch (e) { alert("This does not look like a valid backup file."); return; }
+  if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.transactions)) { alert("This does not look like a valid backup file."); return; }
+  if (!confirm("This will REPLACE all current data on this device, including transactions, goals, budgets, accounts and settings, with the backup. Continue?")) return;
+  if (!parsed.customCategories) parsed.customCategories = { expense: [], income: [] };
+  if (!parsed.recurringTemplates) parsed.recurringTemplates = [];
+  if (!parsed.settings) parsed.settings = { currency: "INR" };
+  if (parsed.settings.autoBackupDays === undefined) parsed.settings.autoBackupDays = 7;
+  if (parsed.settings.lastBackupAt === undefined) parsed.settings.lastBackupAt = null;
+  if (!parsed.budgets) parsed.budgets = [];
+  if (!parsed.goals) parsed.goals = [];
+  if (!parsed.accounts) parsed.accounts = [];
+  data = parsed;
+  saveData(); render();
+  alert("Backup restored successfully.");
 }
 async function performAutoBackupIfDue() {
   try {
@@ -659,13 +737,15 @@ function renderReports() {
   html += '<div class="grid2"><div class="stat"><small>Total income</small><b class="green">' + fmt(income) + '</b></div><div class="stat"><small>Total expense</small><b class="red">' + fmt(expense) + '</b></div></div>';
   html += '<div class="section">Export</div>';
   html += '<div class="grid2"><button class="stat" style="text-align:center;border:none;" onclick="exportCSV()">\u2B07<br><b>CSV export</b></button><button class="stat" style="text-align:center;border:none;" onclick="importCSV()">\u2B06<br><b>CSV import</b></button></div>';
+  html += '<div class="grid2"><button class="stat" style="text-align:center;border:none;" onclick="exportBackup()">💾<br><b>Full backup</b></button><button class="stat" style="text-align:center;border:none;" onclick="importBackup()">🔁<br><b>Restore backup</b></button></div>';
+  html += '<div class="empty" style="padding:0 18px;text-align:left;">Full backup saves everything, including goals and budgets. CSV export and import handle transactions only.</div>';
   html += '<div class="empty" style="padding:0 18px;text-align:left;">PDF export isn\'t available yet \u2014 CSV opens fine in Excel/Sheets.</div>';
   return html;
 }
 
 // ---------------- settings ----------------
 function setCurrency(code) { data.settings.currency = code; saveData(); render(); }
-function setAutoBackupDays(val) { var n = parseInt(val, 10); data.settings.autoBackupDays = isNaN(n) || n < 0 ? 0 : n; saveData(); scheduleRender(150); }
+function setAutoBackupDays(val) { var n = parseInt(val, 10); data.settings.autoBackupDays = isNaN(n) || n < 0 ? 0 : n; saveData(); scheduleRender(400); }
 function addCustomCategory(kind, name) {
   if (!data.customCategories) data.customCategories = { expense: [], income: [] };
   var list = data.customCategories[kind] || (data.customCategories[kind] = []);
@@ -754,7 +834,7 @@ function keypadTap(k) {
 function setDraftField(key, val, immediate) {
   ui.modal.draft[key] = val;
   if (key === "category" && val !== "__new__") ui.modal.draft.newCategoryName = "";
-  if (immediate) render(); else scheduleRender(150);
+  if (immediate) render(); else scheduleRender(400);
 }
 function submitTransactionModal(e) {
   e.preventDefault();
@@ -768,7 +848,8 @@ function submitTransactionModal(e) {
     if (!name) { d.error = "Enter a name for the new category."; render(); return; }
     addCustomCategory(d.type, name); category = name;
   }
-  var tx = { id: ui.modal.editingId || uid(), type: d.type, amount: amt, category: d.type === "transfer" ? "Transfer" : category, accountId: d.accountId, toAccountId: d.type === "transfer" ? d.toAccountId : undefined, date: d.date, note: d.note };
+  var existingTx = ui.modal.editingId ? data.transactions.filter(function (t) { return t.id === ui.modal.editingId; })[0] : null;
+  var tx = { id: ui.modal.editingId || uid(), type: d.type, amount: amt, category: d.type === "transfer" ? "Transfer" : category, accountId: d.accountId, toAccountId: d.type === "transfer" ? d.toAccountId : undefined, date: d.date, note: d.note, createdAt: (existingTx && existingTx.createdAt) || Date.now() };
   if (ui.modal.editingId) {
     var i = data.transactions.findIndex(function (t) { return t.id === tx.id; });
     data.transactions[i] = tx;
@@ -890,9 +971,21 @@ function renderAccountModal(m) {
   return html;
 }
 
+// ---------------- hardware back button ----------------
+function setupBackButtonHandler() {
+  if (!window.Capacitor || !Capacitor.Plugins || !Capacitor.Plugins.App) return;
+  Capacitor.Plugins.App.addListener("backButton", function () {
+    if (ui.modal) { closeModal(); return; }
+    if (ui.moreOpen) { closeMore(); return; }
+    if (ui.tab !== "home") { setTab("home"); return; }
+    Capacitor.Plugins.App.exitApp();
+  });
+}
+
 // ---------------- boot ----------------
 processRecurring();
 performAutoBackupIfDue();
+setupBackButtonHandler();
 render();
 </script>
 </body>
