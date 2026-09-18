@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#14161A"/>
+
+  <!-- cash slips peeking out -->
+  <path d="M170 190 L330 120 Q345 113 352 128 L358 142 Q364 157 349 163 L185 220 Z" fill="#2B2F37"/>
+  <path d="M175 205 L335 150 Q350 145 355 160 L359 173 Q363 188 348 192 L182 235 Z" fill="#3A3F49"/>
+
+  <!-- wallet body -->
+  <rect x="120" y="200" width="272" height="196" rx="28" fill="#1E2127" stroke="#2B2F37" stroke-width="3"/>
+
+  <!-- clasp / card flap -->
+  <path d="M330 268 h74 a20 20 0 0 1 20 20 v40 a20 20 0 0 1 -20 20 h-74 a40 40 0 0 1 0 -80 Z" fill="#14161A" stroke="#C9A464" stroke-width="3"/>
+  <circle cx="358" cy="308" r="10" fill="#C9A464"/>
+
+  <!-- pie-chart badge -->
+  <circle cx="205" cy="330" r="58" fill="#14161A" stroke="#E7E8EA" stroke-width="10"/>
+  <path d="M205 330 L205 280 A50 50 0 0 1 246 355 Z" fill="#C9A464"/>
+  <path d="M205 330 L246 355 A50 50 0 1 1 205 280 Z" fill="#E7E8EA"/>
+  <circle cx="205" cy="330" r="58" fill="none" stroke="#1E2127" stroke-width="2"/>
+
+  <!-- rupee mark -->
+  <text x="256" y="466" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#C9A464" text-anchor="middle" letter-spacing="6">LEDGER</text>
+</svg>
